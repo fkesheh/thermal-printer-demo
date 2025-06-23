@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESC/POS Printer Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        select:focus, input:focus, textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .status-box {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            background: #fff;
+            min-height: 150px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+
+        .status-success {
+            border-color: #27ae60;
+            background: #d5f4e6;
+            color: #1e8449;
+        }
+
+        .status-error {
+            border-color: #e74c3c;
+            background: #fadbd8;
+            color: #c0392b;
+        }
+
+        .status-info {
+            border-color: #3498db;
+            background: #d6eaf8;
+            color: #1f618d;
+        }
+
+        .connection-status {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .connected {
+            background: #d5f4e6;
+            color: #1e8449;
+        }
+
+        .disconnected {
+            background: #fadbd8;
+            color: #c0392b;
+        }
+
+        .unknown {
+            background: #fef9e7;
+            color: #b7950b;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #ccc;
+            border-top-color: #333;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .info-box {
+            background: #e8f4f8;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-box h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+
+        .info-box ul {
+            color: #0c5460;
+            margin-left: 20px;
+        }
+
+        .info-box li {
+            margin-bottom: 5px;
+        }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+        <div class="header">
+            <h1>🖨️ ESC/POS Printer Demo</h1>
+            <p>Test your thermal printer with this Electron application</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <h3>System Printer Setup:</h3>
+                <ul>
+                    <li><strong>Install Printer:</strong> Connect your thermal printer via USB</li>
+                    <li><strong>Install Drivers:</strong> Download and install the official Windows driver</li>
+                    <li><strong>Verify Installation:</strong> Check "Settings > Printers & scanners" in Windows</li>
+                    <li><strong>Test Printer:</strong> Print a test page from Windows to ensure it works</li>
+                    <li><strong>Auto-Detect:</strong> Click "🔄 Refresh Printers" to discover your printers</li>
+                </ul>
+                <h3>This App Uses System Printers Only:</h3>
+                <ul>
+                    <li><strong>System Integration:</strong> Works through Windows print spooler</li>
+                    <li><strong>Driver Required:</strong> Your printer must have a Windows driver installed</li>
+                    <li><strong>Auto-Detection:</strong> Discovers all installed system printers</li>
+                    <li><strong>No Direct USB:</strong> Does not communicate directly with USB devices</li>
+                    <li><strong>Compatible:</strong> Works with any printer that has Windows drivers</li>
+                </ul>
+                <h3>Available Features:</h3>
+                <ul>
+                    <li><strong>Test Receipt:</strong> Complete receipt with items, totals, barcode & QR code</li>
+                    <li><strong>Barcode Demo:</strong> Code128 barcodes and QR codes in different sizes</li>
+                    <li><strong>Table Demo:</strong> Simple and custom formatted tables</li>
+                    <li><strong>Image Demo:</strong> Print sample image (PNG format supported)</li>
+                    <li><strong>Cutting Demos:</strong> Partial cut, full cut, and comparison examples</li>
+                    <li><strong>Custom Text:</strong> Print any text with proper formatting</li>
+                    <li><strong>Cash Drawer:</strong> Open connected cash drawer (if supported)</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>🔧 Printer Configuration</h2>
+                <div class="form-group">
+                    <label for="printerSelect">Select Printer:</label>
+                    <select id="printerSelect">
+                        <option value="">Loading printers...</option>
+                    </select>
+                    <span id="connectionStatus" class="connection-status unknown">Unknown</span>
+                </div>
+                <div class="feature-grid">
+                    <button class="btn" onclick="loadPrinters()">🔄 Refresh Printers</button>
+                    <button class="btn btn-success" onclick="initPrinter()">🔌 Connect Printer</button>
+                    <button class="btn btn-warning" onclick="testConnection()">🔍 Test Connection</button>
+                    <button class="btn" onclick="getPrinterInfo()">📊 Printer Info</button>
+                    <button class="btn" onclick="showPrinterDetails()">📋 System Printers</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🧾 Print Functions</h2>
+                <div class="feature-grid">
+                    <button class="btn btn-success" onclick="printTestReceipt()">📄 Print Test Receipt</button>
+                    <button class="btn btn-warning" onclick="openCashDrawer()">💰 Open Cash Drawer</button>
+                    <button class="btn" onclick="printBarcodeDemo()">📊 Print Barcode Demo</button>
+                    <button class="btn" onclick="printTableDemo()">📋 Print Table Demo</button>
+                    <button class="btn" onclick="printImageDemo()">🖼️ Print Image Demo</button>
+                </div>
+
+                <h3 style="margin-top: 20px; color: #2c3e50;">✂️ Cutting Demos</h3>
+                <div class="feature-grid">
+                    <button class="btn" onclick="printPartialCutDemo()">🔸 Partial Cut Demo</button>
+                    <button class="btn" onclick="printFullCutDemo()">🔹 Full Cut Demo</button>
+                    <button class="btn" onclick="printCuttingComparisonDemo()">✂️ Cut Comparison</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✏️ Custom Print</h2>
+                <div class="form-group">
+                    <label for="customText">Custom Text to Print:</label>
+                    <textarea id="customText" placeholder="Enter your custom text here...
+You can include:
+- Multiple lines
+- Special characters
+- Numbers and symbols
+
+This will be printed with a header and timestamp.">Welcome to our store!
+
+Today's Special:
+- Coffee: $2.50
+- Muffin: $1.99
+- Combo: $3.99
+
+Thank you for visiting!</textarea>
+                </div>
+                <button class="btn" onclick="printCustomText()">🖨️ Print Custom Text</button>
+            </div>
+
+            <div class="section">
+                <h2>📋 Status & Logs</h2>
+                <div id="statusBox" class="status-box">Ready to test your thermal printer!
+
+Click "Refresh Printers" to start, then select your printer and click "Connect Printer".
+
+Logs will appear here...</div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-danger" onclick="clearLogs()">🗑️ Clear Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let statusBox = document.getElementById('statusBox');
+        let printerSelect = document.getElementById('printerSelect');
+        let connectionStatus = document.getElementById('connectionStatus');
+
+        // Utility function to log messages
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            
+            statusBox.textContent += logMessage;
+            statusBox.scrollTop = statusBox.scrollHeight;
+            
+            // Update status box styling
+            statusBox.className = 'status-box';
+            if (type === 'success') {
+                statusBox.classList.add('status-success');
+            } else if (type === 'error') {
+                statusBox.classList.add('status-error');
+            } else {
+                statusBox.classList.add('status-info');
+            }
+        }
+
+        // Clear logs
+        function clearLogs() {
+            statusBox.textContent = 'Logs cleared.\n';
+            statusBox.className = 'status-box status-info';
+        }
+
+        // Load available printers
+        async function loadPrinters() {
+            try {
+                log('Scanning for system printers...');
+                const printers = await ipcRenderer.invoke('get-printers');
+                
+                printerSelect.innerHTML = '';
+                printers.forEach(printer => {
+                    const option = document.createElement('option');
+                    option.value = printer;
+                    option.textContent = printer;
+                    printerSelect.appendChild(option);
+                });
+                
+                log(`Found ${printers.length} printer(s):`, 'success');
+                printers.forEach(printer => {
+                    if (printer !== 'Auto-detect printer') {
+                        log(`  • ${printer}`, 'info');
+                    }
+                });
+                
+                // Also get detailed printer info
+                await getPrintersDetails();
+                
+            } catch (error) {
+                log(`Error loading printers: ${error.message}`, 'error');
+            }
+        }
+
+        // Get detailed printer information
+        async function getPrintersDetails() {
+            try {
+                const details = await ipcRenderer.invoke('get-printer-details');
+                
+                if (details && details.length > 0) {
+                    log('\n📋 System Printer Details:', 'info');
+                    details.forEach(printer => {
+                        log(`  📌 ${printer.name}`, 'info');
+                        log(`     Status: ${printer.status}`, 'info');
+                        log(`     Default: ${printer.isDefault ? 'Yes' : 'No'}`, 'info');
+                        if (printer.description && printer.description !== 'No description') {
+                            log(`     Description: ${printer.description}`, 'info');
+                        }
+                    });
+                } else {
+                    log('No detailed printer information available', 'info');
+                }
+                
+            } catch (error) {
+                console.error('Error getting printer details:', error);
+                // Don't log this error to UI as it's not critical
+            }
+        }
+
+        // Initialize printer
+        async function initPrinter() {
+            try {
+                const selectedPrinter = printerSelect.value;
+                if (!selectedPrinter) {
+                    log('Please select a printer first', 'error');
+                    return;
+                }
+                
+                log(`Initializing printer: ${selectedPrinter}...`);
+                const result = await ipcRenderer.invoke('init-printer', selectedPrinter);
+                
+                if (result.success) {
+                    log('Printer initialized successfully!', 'success');
+                    connectionStatus.textContent = 'Connected';
+                    connectionStatus.className = 'connection-status connected';
+                } else {
+                    log('Failed to initialize printer', 'error');
+                    connectionStatus.textContent = 'Failed';
+                    connectionStatus.className = 'connection-status disconnected';
+                }
+            } catch (error) {
+                log(`Error initializing printer: ${error.message}`, 'error');
+                connectionStatus.textContent = 'Error';
+                connectionStatus.className = 'connection-status disconnected';
+            }
+        }
+
+        // Test printer connection
+        async function testConnection() {
+            try {
+                log('Testing printer connection...');
+                const result = await ipcRenderer.invoke('test-printer-connection');
+                
+                if (result.success) {
+                    if (result.connected) {
+                        log('✅ Printer is connected and ready!', 'success');
+                        connectionStatus.textContent = 'Connected';
+                        connectionStatus.className = 'connection-status connected';
+                    } else {
+                        log('⚠️ Printer initialized but connection unclear', 'info');
+                        connectionStatus.textContent = 'Initialized';
+                        connectionStatus.className = 'connection-status unknown';
+                    }
+                } else {
+                    log(`❌ Connection test failed: ${result.message}`, 'error');
+                    connectionStatus.textContent = 'Disconnected';
+                    connectionStatus.className = 'connection-status disconnected';
+                }
+            } catch (error) {
+                log(`Connection test error: ${error.message}`, 'error');
+                connectionStatus.textContent = 'Error';
+                connectionStatus.className = 'connection-status disconnected';
+            }
+        }
+
+        // Print test receipt
+        async function printTestReceipt() {
+            try {
+                log('Printing test receipt...');
+                const result = await ipcRenderer.invoke('print-test-receipt');
+                
+                if (result.success) {
+                    log('✅ Test receipt printed successfully!', 'success');
+                } else {
+                    log(`❌ Print failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Print error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print custom text
+        async function printCustomText() {
+            try {
+                const customText = document.getElementById('customText').value;
+                if (!customText.trim()) {
+                    log('Please enter some text to print', 'error');
+                    return;
+                }
+                
+                log('Printing custom text...');
+                const result = await ipcRenderer.invoke('print-custom-text', customText);
+                
+                if (result.success) {
+                    log('✅ Custom text printed successfully!', 'success');
+                } else {
+                    log(`❌ Print failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Print error: ${error.message}`, 'error');
+            }
+        }
+
+        // Open cash drawer
+        async function openCashDrawer() {
+            try {
+                log('Opening cash drawer...');
+                const result = await ipcRenderer.invoke('open-cash-drawer');
+                
+                if (result.success) {
+                    log('✅ Cash drawer opened!', 'success');
+                } else {
+                    log(`❌ Failed to open cash drawer: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Cash drawer error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print barcode demo
+        async function printBarcodeDemo() {
+            try {
+                log('Printing barcode demo...');
+                const result = await ipcRenderer.invoke('print-barcode-demo');
+                
+                if (result.success) {
+                    log('✅ Barcode demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Barcode print failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Barcode print error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print table demo
+        async function printTableDemo() {
+            try {
+                log('Printing table demo...');
+                const result = await ipcRenderer.invoke('print-table-demo');
+                
+                if (result.success) {
+                    log('✅ Table demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Table print failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Table print error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print image demo
+        async function printImageDemo() {
+            try {
+                log('Printing image demo...');
+                log('Note: If no image file exists, a placeholder will be printed');
+                const result = await ipcRenderer.invoke('print-image-demo');
+                
+                if (result.success) {
+                    log('✅ Image demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Image print failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Image print error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print partial cut demo
+        async function printPartialCutDemo() {
+            try {
+                log('Printing partial cut demo...');
+                log('Note: Paper will be cut most of the way through but remain connected');
+                const result = await ipcRenderer.invoke('print-partial-cut-demo');
+                
+                if (result.success) {
+                    log('✅ Partial cut demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Partial cut failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Partial cut error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print full cut demo
+        async function printFullCutDemo() {
+            try {
+                log('Printing full cut demo...');
+                log('Note: Paper will be completely cut through');
+                const result = await ipcRenderer.invoke('print-full-cut-demo');
+                
+                if (result.success) {
+                    log('✅ Full cut demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Full cut failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Full cut error: ${error.message}`, 'error');
+            }
+        }
+
+        // Print cutting comparison demo
+        async function printCuttingComparisonDemo() {
+            try {
+                log('Printing cutting comparison demo...');
+                log('Note: This will demonstrate both partial and full cuts in one print job');
+                const result = await ipcRenderer.invoke('print-cutting-comparison-demo');
+                
+                if (result.success) {
+                    log('✅ Cutting comparison demo printed successfully!', 'success');
+                } else {
+                    log(`❌ Cutting comparison failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Cutting comparison error: ${error.message}`, 'error');
+            }
+        }
+
+        // Get printer information
+        async function getPrinterInfo() {
+            try {
+                log('Getting printer information...');
+                const result = await ipcRenderer.invoke('get-printer-info');
+                
+                if (result.success) {
+                    log(`📊 Printer Info:
+Width: ${result.info.width} characters
+Buffer Size: ${result.info.buffer} bytes
+Type: ${result.info.type}
+Character Set: ${result.info.characterSet}`, 'info');
+                } else {
+                    log(`❌ Failed to get printer info: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                log(`Printer info error: ${error.message}`, 'error');
+            }
+        }
+
+        // Show detailed system printer information
+        async function showPrinterDetails() {
+            try {
+                log('Getting detailed system printer information...');
+                await getPrintersDetails();
+            } catch (error) {
+                log(`Error showing printer details: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', () => {
+            log('ESC/POS Printer Demo initialized');
+            log('Make sure your thermal printer is connected and drivers are installed');
+            loadPrinters();
+        });
+    </script>
+  </body>
+</html>

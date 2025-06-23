@@ -1,0 +1,42 @@
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "ESC/POS Thermal Printer Demo for Electron on Windows",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --enable-logging",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "electron",
+    "escpos",
+    "thermal-printer",
+    "pos",
+    "epson",
+    "windows"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^32.2.7"
+  },
+  "dependencies": {
+    "@thesusheer/electron-printer": "^2.0.4",
+    "node-thermal-printer": "^4.5.0"
+  },
+  "build": {
+    "appId": "com.example.escpos-printer-demo",
+    "productName": "ESC/POS Printer Demo",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "index.html",
+      "package.json",
+      "node_modules/"
+    ]
+  }
+}

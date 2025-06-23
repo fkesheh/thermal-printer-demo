@@ -33,6 +33,7 @@ const initializePrinter = (printerName = null) => {
       lineCharacter: "=",
       driver: require('@thesusheer/electron-printer'),
       breakLine: BreakLine.WORD,
+      width: 39,
       options: {
         timeout: 5000
       }
@@ -440,7 +441,7 @@ const printTestReceipt = async () => {
     printer.alignCenter()
     printer.setTextSize(1, 1)
     printer.bold(true)
-    printer.println('🏪 THERMAL PRINTER DEMO')
+    printer.println('THERMAL PRINTER DEMO')
     printer.bold(false)
     printer.setTextSize(0, 0)
     printer.println('123 Main Street')

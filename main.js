@@ -27,11 +27,23 @@ const initializePrinter = (printerName = null) => {
   try {
     printer = new ThermalPrinter({
       type: PrinterTypes.EPSON,  // Most Epson printers work with this
+      // Option 1: Direct system printer (Windows built-in)
       interface: printerName ? `printer:${printerName}` : 'printer:auto',
+      
+      // Option 2: TCP/IP Network connection (uncomment if using network printer)
+      // interface: 'tcp://192.168.1.100:9100',
+      
+      // Option 3: Serial/USB connection (uncomment if using direct USB/Serial)
+      // interface: 'serial:/dev/usb/lp0', // Linux
+      // interface: 'serial:COM3',         // Windows
+      
       characterSet: CharacterSet.PC437_USA,
       removeSpecialCharacters: false,
       lineCharacter: "=",
-      driver: require('@thesusheer/electron-printer'),
+      
+      // Remove driver requirement - use built-in capabilities
+      // driver: require('@thesusheer/electron-printer'),
+      
       breakLine: BreakLine.WORD,
       width: 39,
       options: {
@@ -73,6 +85,166 @@ const getWindowsPrinters = async () => {
   } catch (error) {
     console.log('Could not get printers via PowerShell:', error.message)
     return []
+  }
+}
+
+// Get available serial ports for direct USB/Serial connection (original method)
+const getSerialPorts = async () => {
+  try {
+    // Try different import methods for serialport
+    let SerialPort
+    try {
+      // Try ES6 style import (newer versions)
+      SerialPort = require('serialport').SerialPort
+    } catch (err) {
+      try {
+        // Try older style import
+        SerialPort = require('serialport')
+      } catch (err2) {
+        console.log('SerialPort module not available:', err2.message)
+        return []
+      }
+    }
+    
+    // Get the list method
+    let listPorts
+    if (SerialPort.list) {
+      listPorts = SerialPort.list
+    } else if (require('serialport').list) {
+      listPorts = require('serialport').list
+    } else {
+      console.log('SerialPort.list method not available')
+      return []
+    }
+    
+    console.log('Attempting to list serial ports...')
+    const ports = await listPorts()
+    console.log('Found ports:', ports)
+    
+    if (!ports || ports.length === 0) {
+      console.log('No serial ports detected')
+      return []
+    }
+    
+    return ports.map(port => ({
+      path: port.path || port.comName || 'Unknown',
+      manufacturer: port.manufacturer || 'Unknown',
+      serialNumber: port.serialNumber || 'Unknown',
+      productId: port.productId || 'Unknown',
+      vendorId: port.vendorId || 'Unknown',
+      pnpId: port.pnpId || 'Unknown'
+    }))
+  } catch (error) {
+    console.error('Error getting serial ports:', error)
+    console.log('SerialPort module error details:', error.message)
+    return []
+  }
+}
+
+// Windows-specific COM port detection as fallback
+const getWindowsSerialPorts = async () => {
+  try {
+    if (process.platform !== 'win32') {
+      return []
+    }
+    
+    // Use Windows Management Instrumentation to get COM ports
+    const command = 'powershell "Get-WmiObject -Class Win32_SerialPort | Select-Object DeviceID, Name, Description, PNPDeviceID | ConvertTo-Json"'
+    const { stdout } = await execAsync(command)
+    
+    if (stdout.trim()) {
+      const ports = JSON.parse(stdout)
+      const portArray = Array.isArray(ports) ? ports : [ports]
+      
+      return portArray.map(port => ({
+        path: port.DeviceID || 'Unknown',
+        manufacturer: 'Windows Detected',
+        serialNumber: 'Unknown',
+        productId: 'Unknown',
+        vendorId: 'Unknown',
+        pnpId: port.PNPDeviceID || 'Unknown',
+        description: port.Description || port.Name || 'Serial Port'
+      }))
+    }
+    
+    return []
+  } catch (error) {
+    console.log('Windows COM port detection failed:', error.message)
+    return []
+  }
+}
+
+// Enhanced serial port detection with multiple fallbacks
+const getSerialPortsEnhanced = async () => {
+  try {
+    console.log('Trying SerialPort module...')
+    const serialPorts = await getSerialPorts()
+    
+    if (serialPorts && serialPorts.length > 0) {
+      console.log(`Found ${serialPorts.length} ports via SerialPort module`)
+      return serialPorts
+    }
+    
+    // Fallback to Windows-specific detection
+    if (process.platform === 'win32') {
+      console.log('Trying Windows WMI fallback...')
+      const windowsPorts = await getWindowsSerialPorts()
+      
+      if (windowsPorts && windowsPorts.length > 0) {
+        console.log(`Found ${windowsPorts.length} ports via Windows WMI`)
+        return windowsPorts
+      }
+    }
+    
+    console.log('No serial ports found via any method')
+    return []
+    
+  } catch (error) {
+    console.error('Enhanced serial port detection error:', error)
+    return []
+  }
+}
+
+// Initialize printer with different connection methods
+const initializePrinterWithMethod = (method, connectionString) => {
+  try {
+    let interface_config = ''
+    
+    switch (method) {
+      case 'system':
+        interface_config = connectionString ? `printer:${connectionString}` : 'printer:auto'
+        break
+      case 'network':
+        interface_config = `tcp://${connectionString}`
+        break
+      case 'serial':
+        interface_config = `serial:${connectionString}`
+        break
+      case 'usb':
+        interface_config = `usb:${connectionString}`
+        break
+      default:
+        interface_config = 'printer:auto'
+    }
+    
+    printer = new ThermalPrinter({
+      type: PrinterTypes.EPSON,
+      interface: interface_config,
+      characterSet: CharacterSet.PC437_USA,
+      removeSpecialCharacters: false,
+      lineCharacter: "=",
+      breakLine: BreakLine.WORD,
+      width: 39,
+      options: {
+        timeout: 5000
+      }
+    })
+    
+    console.log(`Printer initialized with ${method} connection: ${interface_config}`)
+    return true
+  } catch (error) {
+    console.error('Error initializing printer:', error)
+    return false
   }
 }
 
@@ -736,6 +908,77 @@ const printTableDemo = async () => {
   }
 }
 
+// Debug function to test SerialPort module
+const debugSerialPort = async () => {
+  try {
+    console.log('=== SerialPort Debug Info ===')
+    console.log('Node version:', process.version)
+    console.log('Platform:', process.platform)
+    console.log('Arch:', process.arch)
+    
+    // Check if module exists
+    try {
+      const serialportModule = require('serialport')
+      console.log('SerialPort module loaded successfully')
+      console.log('SerialPort module keys:', Object.keys(serialportModule))
+      
+      // Check for SerialPort class
+      if (serialportModule.SerialPort) {
+        console.log('SerialPort class found')
+        console.log('SerialPort class methods:', Object.getOwnPropertyNames(serialportModule.SerialPort))
+      }
+      
+      // Check for list method
+      if (serialportModule.SerialPort && serialportModule.SerialPort.list) {
+        console.log('SerialPort.list method found')
+      } else if (serialportModule.list) {
+        console.log('serialport.list method found')
+      } else {
+        console.log('No list method found')
+      }
+      
+    } catch (moduleError) {
+      console.error('Error loading SerialPort module:', moduleError.message)
+      return {
+        success: false,
+        error: `Module load error: ${moduleError.message}`,
+        debug: {
+          nodeVersion: process.version,
+          platform: process.platform,
+          arch: process.arch
+        }
+      }
+    }
+    
+    // Try to get ports
+    const ports = await getSerialPortsEnhanced()
+    console.log('Final ports result:', ports)
+    
+    return {
+      success: true,
+      portsFound: ports.length,
+      ports: ports,
+      debug: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch
+      }
+    }
+    
+  } catch (error) {
+    console.error('Debug error:', error)
+    return {
+      success: false,
+      error: error.message,
+      debug: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch
+      }
+    }
+  }
+}
+
 // IPC Handlers
 ipcMain.handle('get-printers', async () => {
   return await getAvailablePrinters()
@@ -745,9 +988,18 @@ ipcMain.handle('get-printer-details', async () => {
   return await getPrinterDetails()
 })
 
+ipcMain.handle('get-serial-ports', async () => {
+  return await getSerialPortsEnhanced()
+})
+
 ipcMain.handle('init-printer', async (event, printerName) => {
   const success = initializePrinter(printerName === 'Auto-detect printer' ? null : printerName)
   return { success }
+})
+
+ipcMain.handle('init-printer-with-method', async (event, method, connectionString) => {
+  const success = initializePrinterWithMethod(method, connectionString)
+  return { success, method, connectionString }
 })
 
 ipcMain.handle('print-test-receipt', async () => {
@@ -828,6 +1080,10 @@ ipcMain.handle('get-printer-info', async () => {
   } catch (error) {
     return { success: false, message: error.message }
   }
+})
+
+ipcMain.handle('debug-serial-port', async () => {
+  return await debugSerialPort()
 })
 
 app.whenReady().then(() => {

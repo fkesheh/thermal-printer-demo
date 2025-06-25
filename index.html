@@ -252,6 +252,25 @@
         .info-box li {
             margin-bottom: 5px;
         }
+
+        .connection-input {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f0f8ff;
+            border-radius: 8px;
+            border: 1px solid #d1ecf1;
+        }
+
+        .connection-input .form-group {
+            margin-bottom: 15px;
+        }
+
+        .connection-input .info-box {
+            margin-top: 10px;
+            margin-bottom: 0;
+            background: #e8f4fd;
+            border-color: #b8daff;
+        }
     </style>
   </head>
   <body>
@@ -263,7 +282,14 @@
         
         <div class="content">
             <div class="info-box">
-                <h3>System Printer Setup:</h3>
+                <h3>🔌 Direct Connection Methods:</h3>
+                <ul>
+                    <li><strong>System Printer:</strong> Connect through Windows print spooler (requires drivers)</li>
+                    <li><strong>Network (TCP/IP):</strong> Connect directly to network-enabled thermal printers</li>
+                    <li><strong>Serial/USB:</strong> Direct connection via COM ports or USB endpoints</li>
+                    <li><strong>Auto-Detect:</strong> Automatically discover available system printers</li>
+                </ul>
+                <h3>System Printer Setup (Traditional):</h3>
                 <ul>
                     <li><strong>Install Printer:</strong> Connect your thermal printer via USB</li>
                     <li><strong>Install Drivers:</strong> Download and install the official Windows driver</li>
@@ -271,13 +297,13 @@
                     <li><strong>Test Printer:</strong> Print a test page from Windows to ensure it works</li>
                     <li><strong>Auto-Detect:</strong> Click "🔄 Refresh Printers" to discover your printers</li>
                 </ul>
-                <h3>This App Uses System Printers Only:</h3>
+                <h3>Direct Connection Benefits:</h3>
                 <ul>
-                    <li><strong>System Integration:</strong> Works through Windows print spooler</li>
-                    <li><strong>Driver Required:</strong> Your printer must have a Windows driver installed</li>
-                    <li><strong>Auto-Detection:</strong> Discovers all installed system printers</li>
-                    <li><strong>No Direct USB:</strong> Does not communicate directly with USB devices</li>
-                    <li><strong>Compatible:</strong> Works with any printer that has Windows drivers</li>
+                    <li><strong>No Driver Required:</strong> Connect directly without Windows drivers</li>
+                    <li><strong>Network Support:</strong> Connect to network printers via IP address</li>
+                    <li><strong>Raw Communication:</strong> Direct ESC/POS command communication</li>
+                    <li><strong>Faster Response:</strong> Bypass Windows print spooler for speed</li>
+                    <li><strong>Multiple Methods:</strong> Choose the best connection for your setup</li>
                 </ul>
                 <h3>Available Features:</h3>
                 <ul>
@@ -292,9 +318,9 @@
             </div>
 
             <div class="section">
-                <h2>🔧 Printer Configuration</h2>
+                <h2>🔧 Basic Printer Configuration</h2>
                 <div class="form-group">
-                    <label for="printerSelect">Select Printer:</label>
+                    <label for="printerSelect">Select System Printer:</label>
                     <select id="printerSelect">
                         <option value="">Loading printers...</option>
                     </select>
@@ -306,6 +332,66 @@
                     <button class="btn btn-warning" onclick="testConnection()">🔍 Test Connection</button>
                     <button class="btn" onclick="getPrinterInfo()">📊 Printer Info</button>
                     <button class="btn" onclick="showPrinterDetails()">📋 System Printers</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🔌 Advanced Connection Methods</h2>
+                <div class="form-group">
+                    <label for="connectionMethod">Connection Method:</label>
+                    <select id="connectionMethod" onchange="toggleConnectionInputs()">
+                        <option value="system">System Printer (Default)</option>
+                        <option value="network">Network (TCP/IP)</option>
+                        <option value="serial">Serial Port</option>
+                        <option value="usb">USB Direct</option>
+                    </select>
+                </div>
+                
+                <div id="systemConnection" class="connection-input">
+                    <div class="form-group">
+                        <label for="systemPrinterName">System Printer Name:</label>
+                        <input type="text" id="systemPrinterName" placeholder="Leave blank for auto-detect">
+                    </div>
+                </div>
+                
+                <div id="networkConnection" class="connection-input" style="display: none;">
+                    <div class="form-group">
+                        <label for="networkAddress">Network Address:</label>
+                        <input type="text" id="networkAddress" placeholder="192.168.1.100:9100">
+                    </div>
+                    <div class="info-box">
+                        <p><strong>Network Setup:</strong> Enter the IP address and port of your network printer. Common ports are 9100 (raw), 515 (LPR), or 631 (IPP).</p>
+                    </div>
+                </div>
+                
+                <div id="serialConnection" class="connection-input" style="display: none;">
+                    <div class="form-group">
+                        <label for="serialPort">Serial Port:</label>
+                        <select id="serialPort">
+                            <option value="">Select serial port...</option>
+                        </select>
+                        <button class="btn" onclick="refreshSerialPorts()" style="margin-top: 10px;">🔄 Refresh Ports</button>
+                        <button class="btn btn-warning" onclick="debugSerialPort()" style="margin-top: 10px;">🔍 Debug Serial</button>
+                    </div>
+                    <div class="info-box">
+                        <p><strong>Serial Setup:</strong> Select the COM port your printer is connected to. Common ports are COM1, COM3, etc.</p>
+                        <p><strong>Troubleshooting:</strong> If no ports appear, click "Debug Serial" to see detailed information.</p>
+                    </div>
+                </div>
+                
+                <div id="usbConnection" class="connection-input" style="display: none;">
+                    <div class="form-group">
+                        <label for="usbEndpoint">USB Endpoint:</label>
+                        <input type="text" id="usbEndpoint" placeholder="/dev/usb/lp0 or specific USB path">
+                    </div>
+                    <div class="info-box">
+                        <p><strong>USB Setup:</strong> Enter the USB device path. On Windows, this might be a specific device identifier.</p>
+                    </div>
+                </div>
+                
+                <div class="feature-grid">
+                    <button class="btn btn-success" onclick="connectWithAdvancedMethod()">🔌 Connect with Method</button>
+                    <button class="btn btn-warning" onclick="testConnection()">🔍 Test Connection</button>
                 </div>
             </div>
 
@@ -686,6 +772,157 @@ Character Set: ${result.info.characterSet}`, 'info');
                 await getPrintersDetails();
             } catch (error) {
                 log(`Error showing printer details: ${error.message}`, 'error');
+            }
+        }
+
+        // Toggle connection input fields based on selected method
+        function toggleConnectionInputs() {
+            const method = document.getElementById('connectionMethod').value;
+            const inputs = ['systemConnection', 'networkConnection', 'serialConnection', 'usbConnection'];
+            
+            inputs.forEach(inputId => {
+                document.getElementById(inputId).style.display = 'none';
+            });
+            
+            document.getElementById(`${method}Connection`).style.display = 'block';
+            
+            // Load serial ports if serial method is selected
+            if (method === 'serial') {
+                refreshSerialPorts();
+            }
+        }
+
+        // Refresh available serial ports
+        async function refreshSerialPorts() {
+            try {
+                log('Scanning for serial ports...');
+                const ports = await ipcRenderer.invoke('get-serial-ports');
+                
+                const serialSelect = document.getElementById('serialPort');
+                serialSelect.innerHTML = '<option value="">Select serial port...</option>';
+                
+                if (ports && ports.length > 0) {
+                    ports.forEach(port => {
+                        const option = document.createElement('option');
+                        option.value = port.path;
+                        option.textContent = `${port.path} (${port.manufacturer})`;
+                        serialSelect.appendChild(option);
+                    });
+                    
+                    log(`Found ${ports.length} serial port(s):`, 'success');
+                    ports.forEach(port => {
+                        log(`  • ${port.path} - ${port.manufacturer}`, 'info');
+                    });
+                } else {
+                    log('No serial ports found', 'info');
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No serial ports found';
+                    serialSelect.appendChild(option);
+                }
+                
+            } catch (error) {
+                log(`Error scanning serial ports: ${error.message}`, 'error');
+            }
+        }
+
+        // Debug serial port detection
+        async function debugSerialPort() {
+            try {
+                log('Running serial port diagnostics...');
+                const result = await ipcRenderer.invoke('debug-serial-port');
+                
+                if (result.success) {
+                    log('=== Serial Port Debug Results ===', 'info');
+                    log(`Node.js Version: ${result.debug.nodeVersion}`, 'info');
+                    log(`Platform: ${result.debug.platform}`, 'info');
+                    log(`Architecture: ${result.debug.arch}`, 'info');
+                    log(`Ports Found: ${result.portsFound}`, 'info');
+                    
+                    if (result.ports && result.ports.length > 0) {
+                        log('\n📍 Detected Serial Ports:', 'success');
+                        result.ports.forEach(port => {
+                            log(`  • ${port.path}`, 'info');
+                            log(`    Manufacturer: ${port.manufacturer}`, 'info');
+                            log(`    PnP ID: ${port.pnpId}`, 'info');
+                            log(`    VID/PID: ${port.vendorId}/${port.productId}`, 'info');
+                        });
+                    } else {
+                        log('\n⚠️ No serial ports detected', 'info');
+                        log('Possible reasons:', 'info');
+                        log('  • No USB/Serial devices connected', 'info');
+                        log('  • Devices don\'t have proper drivers', 'info');
+                        log('  • SerialPort module compilation issues', 'info');
+                    }
+                } else {
+                    log('❌ Serial port debug failed:', 'error');
+                    log(`Error: ${result.error}`, 'error');
+                    log(`Node.js: ${result.debug.nodeVersion}`, 'info');
+                    log(`Platform: ${result.debug.platform}`, 'info');
+                    
+                    if (result.error.includes('Module load error')) {
+                        log('\n💡 Possible Solutions:', 'info');
+                        log('  • Run: npm rebuild serialport', 'info');
+                        log('  • Check if Visual Studio Build Tools installed', 'info');
+                        log('  • Try: npm install --build-from-source serialport', 'info');
+                    }
+                }
+                
+            } catch (error) {
+                log(`Debug error: ${error.message}`, 'error');
+            }
+        }
+
+        // Connect using advanced method
+        async function connectWithAdvancedMethod() {
+            try {
+                const method = document.getElementById('connectionMethod').value;
+                let connectionString = '';
+                
+                switch (method) {
+                    case 'system':
+                        connectionString = document.getElementById('systemPrinterName').value || '';
+                        break;
+                    case 'network':
+                        connectionString = document.getElementById('networkAddress').value;
+                        if (!connectionString) {
+                            log('Please enter network address (e.g., 192.168.1.100:9100)', 'error');
+                            return;
+                        }
+                        break;
+                    case 'serial':
+                        connectionString = document.getElementById('serialPort').value;
+                        if (!connectionString) {
+                            log('Please select a serial port', 'error');
+                            return;
+                        }
+                        break;
+                    case 'usb':
+                        connectionString = document.getElementById('usbEndpoint').value;
+                        if (!connectionString) {
+                            log('Please enter USB endpoint path', 'error');
+                            return;
+                        }
+                        break;
+                }
+                
+                log(`Connecting via ${method.toUpperCase()}: ${connectionString || 'auto-detect'}...`);
+                const result = await ipcRenderer.invoke('init-printer-with-method', method, connectionString);
+                
+                if (result.success) {
+                    log(`✅ Successfully connected via ${method.toUpperCase()}!`, 'success');
+                    connectionStatus.textContent = 'Connected';
+                    connectionStatus.className = 'connection-status connected';
+                } else {
+                    log(`❌ Failed to connect via ${method.toUpperCase()}`, 'error');
+                    connectionStatus.textContent = 'Failed';
+                    connectionStatus.className = 'connection-status disconnected';
+                }
+                
+            } catch (error) {
+                log(`Connection error: ${error.message}`, 'error');
+                connectionStatus.textContent = 'Error';
+                connectionStatus.className = 'connection-status disconnected';
             }
         }
 
